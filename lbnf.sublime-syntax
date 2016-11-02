@@ -1,0 +1,314 @@
+%YAML 1.2
+---
+name: LBNF
+file_extensions: [cf]
+scope: source.lbnf
+variables:
+    ident: '[a-zA-Z]\w*'
+contexts:
+    main:
+        - include: terminal_string
+        - include: multiline_comment
+        - include: line_comment
+        #- include: nt_builtin
+
+        # Keywords:
+       # - match: '\b(char|digit|entrypoints|eps|internal|layout|letter|lower|nonempty|position|rules|separator|stop|terminator|token|toplevel|upper)\b'
+        #  scope: keyword.control.lbnf
+
+        # Numbers:
+        #- match: '\b(-)?[0-9.]+\b'
+         # scope: constant.numeric.lbnf terminal.numeric.lbnf
+
+        - include: def_comment
+        - include: def_separator
+        - include: def_terminator
+        - include: def_coercions
+        - include: def_entrypoints
+        - include: def_layout
+        - include: def_rules
+        #- include: def_internal
+
+        #- include: production_rule
+
+    # comment <String>
+    def_comment:
+        - match: '\b(comment)\b'
+          captures:
+            1: keyword.control.comment.lbnf
+          push:
+            - include: terminal_string
+            - match: '\;'
+              scope: punctuation.terminator.production.lbnf
+              pop: true
+
+    def_rules:
+        - match: '\b(rules)\b'
+          captures:
+            1: keyword.control.rules.lbnf
+          set:
+            - rules_list
+            - production_op_replace
+            - production_cat
+          #push: list_ident
+
+    rules_list:
+        - include: rules_prod_replace
+          set:
+            - match: '(\|)'
+              captures:
+                1: punctuation.separator
+              set: rules_list
+            - match: '\;'
+              scope: punctuation.terminator.production.lbnf
+              pop: true
+
+    # Production Rule
+    # Current: <ListItem>
+    rules_prod_replace:
+        - match: '\|'
+          scope: punctuation.separator.lbnf
+          pop: true
+        - include: nt_builtin
+          set: rules_prod_replace
+        - include: terminal_string
+          set: rules_prod_replace
+        - include: production_cat0
+          push: rules_prod_replace
+        - include: list_cat
+          set: rules_prod_replace
+
+    # layout <ListString> | layout stop <ListString> | layout toplevel
+    def_layout:
+        - include: def_layout_inner        
+        - match: '\;'
+          scope: punctuation.terminator.production.lbnf
+          pop: true
+
+    def_layout_inner:
+        - match: '\b(layout)\b\s+\b(toplevel)\b'
+          captures:
+            1: keyword.control.layout.lbnf
+            2: storage.modifier.toplevel.lbnf
+        - match: '\b(layout)\b\s+\b(stop)\b'
+          captures:
+            1: keyword.control.layout.lbnf
+            2: storage.modifier.stop.lbnf
+          push: list_ident
+        - match: '\b(layout)\b'
+          captures:
+            1: keyword.control.layout.lbnf
+          push: list_ident
+
+    # coercions <Ident> <Integer>
+    def_coercions:
+        - match: '(\bcoercions\b)\s*({{ident}})\s*(\d+)\s*(;)'
+          captures:
+            1: keyword.control.coercions.lbnf
+            2: storage.type.category.lbnf category.lbnf
+            3: constant.numeric.integer
+            4: punctuation.terminator.production.lbnf
+
+    # entrypoints <ListIdent>
+    # <ListIdent> ::= <Ident> | <Ident> , <ListIdent>
+    def_entrypoints:
+        - match: '\b(entrypoints)\b'
+          captures:
+            1: keyword.control.entrypoints.lbnf
+          push: list_ident
+
+    list_ident:
+        - match: '{{ident}}'
+          scope: storage.type.category.lbnf category.lbnf
+          set:
+            - match: '(,)'
+              captures:
+                1: punctuation.separator
+              set: list_ident
+            - match: '\;'
+              scope: punctuation.terminator.production.lbnf
+              pop: true
+
+    # separator <MinimumSize> <Cat> <String>
+    def_separator:
+        - match: '(\bseparator\b)\s+(\bnonempty\b)?'
+          captures:
+            1: keyword.control.separator.lbnf
+            2: storage.modifier.nonempty.lbnf
+          set: def_sep_common
+
+    # terminator <MinimumSize> <Cat> <String>
+    def_terminator:
+        - match: '(\bterminator\b)\s+(\bnonempty\b)?'
+          captures:
+            1: keyword.control.terminator.lbnf
+            2: storage.modifier.nonempty.lbnf
+          set: def_sep_common
+
+    def_sep_common:
+        - match: '\;'
+          scope: punctuation.terminator.production.lbnf
+          pop: true
+        - include: terminal_string
+        - include: production_cat0
+
+    def_internal:
+        - match: '\b(internal)\b'
+          captures:
+            1: keyword.control.internal.lbnf
+          set:
+            # Current: <Label>
+            - match: '({{ident}})'
+              scope: production.rule.lbnf
+              captures:
+                1: entity.name.label.lbnf
+              push:
+                - production_replace
+                - production_op_replace
+                - production_cat
+                - production_op_label
+
+    # Production Rule
+    # Starts: <Def> ::= <Label> . <Cat> ::= <ListItem>
+    production_rule:
+        # Current: <Label>
+        - match: '({{ident}})'
+          scope: production.rule.lbnf
+          captures:
+            1: entity.name.label.lbnf label.lbnf
+          push:
+            - production_replace
+            - production_op_replace
+            - production_cat
+            - production_op_label
+
+    # Production Rule
+    # Current: .
+    production_op_label:
+        - match: '(\.)'
+          captures:
+              1: keyword.operator.label.lbnf  operator.label.lbnf
+          pop: true
+
+    # Production Rule
+    # Current: <Cat>
+    production_cat:
+        - match: '{{ident}}'
+          scope: storage.type.category.lbnf category.lbnf
+          pop: true
+
+    # Production Rule
+    # Current: <Cat>
+    production_cat0:
+        - match: '{{ident}}'
+          scope: storage.type.category.lbnf category.lbnf
+
+    # Production Rule
+    # Current: ::=
+    production_op_replace:
+        - match: '(::=)'
+          captures:
+            1: keyword.operator.production.lbnf
+          pop: true
+
+    # Production Rule
+    # Current: <ListItem>
+    production_replace:
+        - match: '\;'
+          scope: punctuation.terminator.production.lbnf
+          pop: true
+        - include: nt_builtin
+          set: production_replace
+        - include: terminal_string
+          set: production_replace
+        - include: production_cat0
+          push: production_replace
+        - include: list_cat
+          set: production_replace
+
+    list_cat:
+        - match: '(\[)'
+          captures:
+            1: punctuation.section.array.begin
+          push:
+            - list_cat_end
+            - production_cat
+
+    list_cat_end:
+        - match: '(\])'
+          captures:
+            1: punctuation.section.array.end
+          pop: true
+
+    # Built-in Non-Terminals:
+    nt_builtin:
+        - include: nt_builtin_ident
+        - include: nt_builtin_integer
+        - include: nt_builtin_double
+        - include: nt_builtin_char
+        - include: nt_builtin_string
+
+    nt_builtin_ident:
+        - match: '\b(Ident)\b'
+          scope: constant.language.ident.lbnf nonterminal.builtin.ident.lbnf
+
+    nt_builtin_integer:
+        - match: '\b(Integer)\b'
+          scope: constant.language.integer.lbnf
+                 nonterminal.builtin.integer.lbnf
+
+    nt_builtin_double:
+        - match: '\b(Double)\b'
+          scope: constant.language.double.lbnf
+                 nonterminal.builtin.double.lbnf
+
+    nt_builtin_char:
+        - match: '\b(Char)\b'
+          scope: constant.language.char.lbnf
+                 nonterminal.builtin.char.lbnf
+
+    nt_builtin_string:
+        - match: '\b(String)\b'
+          scope: constant.language.string.lbnf
+                 nonterminal.builtin.string.lbnf
+
+    # <String>:
+    terminal_string:
+        - match: '"'
+          scope: punctuation.definition.string.begin.lbnf
+                 terminal.string.begin.lbnf
+          push: terminal_string_end
+
+    terminal_string_end:
+        - meta_scope: string.quoted.double.lbnf
+                      terminal.string.lbnf
+        - match: '\\.'
+          scope: constant.character.escape.lbnf
+                 terminal.string.escape.lbnf
+        - match: '"'
+          scope: punctuation.definition.string.end.lbnf
+                 terminal.string.end.lbnf
+          pop: true
+
+    # Multiline Comments:
+    multiline_comment:
+        - match: '{-'
+          scope: punctuation.definition.comment.start.lbnf
+          push: multiline_comment_end
+
+    multiline_comment_end:
+        - meta_scope: comment.block.lbnf
+        - match: '-}'
+          scope: punctuation.definition.comment.end.lbnf
+          pop: true
+
+    # Line Comments:
+    line_comment:
+        - match: '--'
+          scope: punctuation.definition.comment.lbnf
+          push: line_comment_end
+
+    line_comment_end:
+        - meta_scope: comment.line.lbnf
+        - match: $
+          pop: true
