@@ -10,16 +10,6 @@ contexts:
         - include: terminal_string
         - include: multiline_comment
         - include: line_comment
-        #- include: nt_builtin
-
-        # Keywords:
-       # - match: '\b(char|digit|entrypoints|eps|internal|layout|letter|lower|nonempty|position|rules|separator|stop|terminator|token|toplevel|upper)\b'
-        #  scope: keyword.control.lbnf
-
-        # Numbers:
-        #- match: '\b(-)?[0-9.]+\b'
-         # scope: constant.numeric.lbnf terminal.numeric.lbnf
-
         - include: def_comment
         - include: def_separator
         - include: def_terminator
@@ -27,9 +17,20 @@ contexts:
         - include: def_entrypoints
         - include: def_layout
         - include: def_rules
+        - include: def_pos_token
         - include: def_token
         - include: def_internal
         - include: production_rule
+
+    # token <Ident> <Reg>
+    def_pos_token:
+        - match: '\b(position)\b\s+\b(token)\b'
+          captures:
+            1: keyword.control.position.lbnf
+            2: keyword.control.token.lbnf
+          push:
+            - reg
+            - production_cat
 
     # token <Ident> <Reg>
     def_token:
@@ -37,77 +38,47 @@ contexts:
           captures:
             1: keyword.control.token.lbnf
           push:
-            - include: reg
+            - reg
+            - production_cat
 
-#
-#    reg_1:
-#        - include: reg_1
-#          set:
-#            - match: '\|'
-#              set: reg_2
-#        - include: reg_2
-#          set:
-#            - match: '\-'
-#              set: reg_2
-#        - include: reg_2
-#
-#    reg_2:
-#        - include: reg_2
-#          set:
-#            - match: '\s+'
-#              set: reg_3
-#
-#    reg_3:
-#        - match: 'char'
-#          scope: entity.name.char.lbnf
-#        - match: 'lower'
-#          scope: entity.name.lower.lbnf
-#        - match: 'upper'
-#          scope: entity.name.upper.lbnf
-#        - match: 'letter'
-#          scope: entity.name.letter.lbnf
-#        - match: 'digit'
-#          scope: entity.name.digit.lbnf
-#        - match: 'eps'
-#          scope: entity.name.eps.lbnf
-#        - match: '\('
-#          scope:  punctuation.section.group.begin
-#          set:
-#            - include: reg0
-#            - match: '\)'
-#              meta_scope: meta.group
-#              scope: punctuation.section.group.end
-#        - match: '\['
-#          scope:  punctuation.section.group.begin
-#          set:
-#            - include: terminal_string
-#            - match: '\]'
-#              meta_scope: meta.group
-#              scope: punctuation.section.group.end
-#        - match: '\{'
-#          scope:  punctuation.section.group.begin
-#          set:
-#            - include: terminal_string
-#            - match: '\}'
-#              meta_scope: meta.group
-#              scope: punctuation.section.group.end
-#        - include: reg3
-#          set:
-#            - match: '\+'
-#              scope: keyword.operator.regexplus.lbnf
-#        - include: reg3
-#          set:
-#            - match: '\*'
-#              scope: keyword.operator.regexstar.lbnf
-#        - include: reg3
-#          set:
-#            - match: '\?'
-#              scope: keyword.operator.regexlazy.lbnf
-#        - include: reg3
-#          set:
-#            - match: '\?'
-#              scope: keyword.operator.regexlazy.lbnf
-#        - include: terminal_char
+    reg:
+        - match: '\;'
+          scope: punctuation.terminator.lbnf
+          pop: true
+        - match: '\-|\|'
+          scope: punctuation.separator.lbnf
+        - match: '\('
+          scope:  punctuation.section.group.begin.lbnf
+        - match: '\)'
+          scope: punctuation.section.group.end.lbnf
+        - match: '(\+)|(\*)|(\?)'
+          captures:
+            1: keyword.operator.regplus.lbnf
+            2: keyword.operator.regstar.lbnf
+            3: keyword.operator.reglazy.lbnf
+        - match: '(\bchar\b)|(\blower\b)|(\bupper\b)|(\bletter\b)|(\bdigit\b)|(\beps\b)'
+          captures:
+            1: entity.name.char.lbnf
+            2: entity.name.lower.lbnf
+            3: entity.name.upper.lbnf
+            4: entity.name.letter.lbnf
+            5: entity.name.digit.lbnf
+            6: entity.name.eps.lbnf
+        - include: terminal_char
+        - match: '\['
+          scope:  punctuation.section.group.begin
+          set:
+            - include: terminal_string
+            - match: '\]'
+              meta_scope: meta.group
+              scope: punctuation.section.group.end
+        - match: '\{'
+          scope:  punctuation.section.group.begin
+          set:
+            - include: terminal_string
+            - match: '\}'
+              meta_scope: meta.group
+              scope: punctuation.section.group.end
 
     # comment <String>
     def_comment:
@@ -145,15 +116,10 @@ contexts:
           set: rules_list
         - include: production_cat0
           push: rules_list
-        - include: list_cat
-          set: rules_list
 
     # layout <ListString> | layout stop <ListString> | layout toplevel
     def_layout:
-        - include: def_layout_inner        
-        - match: '\;'
-          scope: punctuation.terminator.production.lbnf
-          pop: true
+        - include: def_layout_inner
 
     def_layout_inner:
         - match: '\b(layout)\b\s+\b(toplevel)\b'
@@ -164,11 +130,20 @@ contexts:
           captures:
             1: keyword.control.layout.lbnf
             2: storage.modifier.stop.lbnf
-          push: list_ident
+          push: list_string
         - match: '\b(layout)\b'
           captures:
             1: keyword.control.layout.lbnf
-          push: list_ident
+          push: list_string
+
+    list_string:
+        - include: terminal_string
+        - match: '(,)'
+          captures:
+            1: punctuation.separator
+        - match: '\;'
+          scope: punctuation.terminator.production.lbnf
+          pop: true
 
     # coercions <Ident> <Integer>
     def_coercions:
@@ -242,10 +217,14 @@ contexts:
     # Starts: <Def> ::= <Label> . <Cat> ::= <ListItem>
     production_rule:
         # Current: <Label>
-        - match: '({{ident}})'
+        - match: '(({{ident}})|(_)|(\[\s*\])|(\(\s*:\s*\))|(\(\s*:\s*\[\s*\]\)))'
           scope: production.rule.lbnf
           captures:
-            1: entity.name.label.lbnf label.lbnf
+            2: entity.name.label.lbnf label.lbnf
+            3: constant.language.ignore.lbnf label.ignore.lbnf
+            4: constant.language.list.empty.lbnf label.list.empty.lbnf
+            5: constant.language.list.cons.lbnf label.list.cons.lbnf
+            6: constant.language.list.cons.empty.lbnf label.list.cons.empty.lbnf
           push:
             - production_replace
             - production_op_replace
@@ -266,12 +245,30 @@ contexts:
         - match: '{{ident}}'
           scope: storage.type.category.lbnf category.lbnf
           pop: true
+        - match: '(\[)'
+          captures:
+            1: punctuation.section.array.begin
+          set:
+            - list_cat_end
+            - production_cat
+
+    list_cat_end:
+        - match: '(\])'
+          captures:
+            1: punctuation.section.array.end
+          pop: true
 
     # Production Rule
     # Current: <Cat>
     production_cat0:
         - match: '{{ident}}'
           scope: storage.type.category.lbnf category.lbnf
+        - match: '(\[)'
+          captures:
+            1: punctuation.section.array.begin
+          push:
+            - list_cat_end
+            - production_cat
 
     # Production Rule
     # Current: ::=
@@ -293,22 +290,6 @@ contexts:
           set: production_replace
         - include: production_cat0
           push: production_replace
-        - include: list_cat
-          set: production_replace
-
-    list_cat:
-        - match: '(\[)'
-          captures:
-            1: punctuation.section.array.begin
-          push:
-            - list_cat_end
-            - production_cat
-
-    list_cat_end:
-        - match: '(\])'
-          captures:
-            1: punctuation.section.array.end
-          pop: true
 
     # Built-in Non-Terminals:
     nt_builtin:
