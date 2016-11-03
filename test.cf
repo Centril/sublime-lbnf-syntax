@@ -1,0 +1,101 @@
+-- single line comment
+
+[].    [Stm] ::= ;
+(:).   [Stm] ::= Stm ";" [Stm] ;
+
+EPlus. Exp ::= Exp "+" Num ;
+ENum.  Exp ::= Num ;
+NOne.  Num ::= "1" ;
+
+Char_a. Char ::= "a" ;
+Char_b. Char ::= "b" ;
+
+_ . Stm ::= Stm ";" ;
+
+EInt.   Exp3 ::= Integer ;
+ETimes. Exp2 ::= Exp2 "*" Exp3 ;
+EPlus.  Exp  ::= Exp  "+" Exp2 ;
+_.      Exp  ::= Exp2 ;
+_.      Exp2 ::= Exp3 ;
+_.      Exp3 ::= "(" Exp ")" ;
+
+NilDef.  ListDef ::= ;
+ConsDef. ListDef ::= Def ";" ListDef ;
+
+[].  [Def] ::= ;
+(:). [Def] ::= Def ";" [Def] ;
+
+comment "//" ;
+comment "/*" "*/" ;
+
+internal EVarT. Exp ::= "(" Ident ":" Type ")";
+
+entrypoints Stm, Exp ;
+
+token UIdent (upper (letter | digit | '_')*) ;
+position token PIdent (letter (letter|digit|'_'|'\'')*) ;
+
+terminator Stm ";" ;
+
+[].  [Stm] ::= ;
+(:). [Stm] ::= Stm ";" [Stm] ;
+
+terminator nonempty Stm ";" ;
+
+(:[]). [Stm] ::= Stm ";" ;
+(:).   [Stm] ::= Stm ";" [Stm] ;
+
+terminator Stm "" ;
+
+[].  [Stm] ::= ;
+(:). [Stm] ::= Stm [Stm] ;
+
+separator Stm ";" ;
+
+[].    [Stm] ::= ;
+(:[]). [Stm] ::= Stm ;
+(:).   [Stm] ::= Stm ";" [Stm] ;
+
+separator nonempty Stm ";" ;
+
+
+(:[]). [Stm] ::= Stm ;
+(:).   [Stm] ::= Stm ";" [Stm] ;
+
+coercions Exp 3 ;
+
+_. Exp  ::= Exp1 ;
+_. Exp1 ::= Exp2 ;
+_. Exp2 ::= Exp3 ;
+_. Exp3 ::= "(" Exp ")" ;
+
+EInt. Exp2 ::= Integer;
+EAdd. Exp1 ::= Exp1 "+" Exp2;
+
+Foo. F ::= "foo" Exp2 ;
+
+separator Exp "," ;
+separator Exp2 ";" ;
+
+rules Type ::= [Type] "[" Integer "]" | "float" | "double" | Type "*" ;
+
+Type_0.      Type ::= Type "[" Integer "]" ;
+Type_float.  Type ::= "float" ;
+Type_double. Type ::= "double" ;
+Type_3.      Type ::= Type "*" ;
+
+layout "of" , "let", "where", "sig", "struct" ;
+
+ECase. Exp ::= "case" Exp "of" "{" [Branch] "}" ;
+
+separator Branch ";" ;
+
+layout stop "in" ;
+
+layout toplevel ;
+
+While ([],[0])([],[1])([],[2]). Stm ::= "while" "(" Exp ")" Stm Stm ;
+
+Decl ([],[0])([[1]],[2]). Stm ::= Typ Ident ";" Stm ;
+
+IsAlways ([],[0,1]). Sentence ::= "a" Noun "is" "always" "a" Noun  ;
