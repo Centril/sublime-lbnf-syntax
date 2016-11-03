@@ -1,4 +1,4 @@
-[![License]][url: License] [![Semver]][url: Semver] [![Gittip]][url: Gittip]
+[![License]][url: License] [![Semver]][url: Semver]
 
 # [**L**BNF] <br/> for [Sublime Text]
 
@@ -6,7 +6,7 @@
 
 ## Requirements
 
-[Sublime Text] 3. Version 2 is not supported.
+[Sublime Text] 3 only. **Version 2 is not supported.**
 
 ## Getting Started
 
@@ -60,12 +60,12 @@ Copyright (c) 2016 Mazdak Farrokhzad.
 
 <!-- references -->
 
-[Gittip]: http://img.shields.io/gittip/Centril.svg?style=flat
-[url: Gittip]: https://www.gittip.com/Centril/
-[License]: http://img.shields.io/badge/license-MIT-blue.svg?style=flat
+[License]: http://img.shields.io/badge/license-MIT-ff69b4.svg?style=flat-square
 [url: License]: LICENSE.md
-[Semver]: http://img.shields.io/badge/semver-2.0.0-blue.svg?style=flat
+[Semver]: http://img.shields.io/badge/semver-2.0.0-blue.svg?style=flat-square
 [url: Semver]: http://semver.org/spec/v2.0.0.html
+[PackageControl]: https://packagecontrol.herokuapp.com/downloads/LBNF.svg?style=flat-square
+[url: PackageControl]: https://packagecontrol.io/packages/LBNF
 
 [**L**BNF]: https://github.com/BNFC/bnfc/blob/master/docs/lbnf.rst
 [bnfc]: https://github.com/BNFC/bnfc
