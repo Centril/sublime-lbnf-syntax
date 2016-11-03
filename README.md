@@ -1,4 +1,4 @@
-[![License]][url: License] [![Semver]][url: Semver]
+[![PackageControl]][url: PackageControl] [![License]][url: License] [![Semver]][url: Semver]
 
 # [**L**BNF] <br/> for [Sublime Text]
 
