@@ -27,9 +27,87 @@ contexts:
         - include: def_entrypoints
         - include: def_layout
         - include: def_rules
-        #- include: def_internal
+        - include: def_token
+        - include: def_internal
+        - include: production_rule
 
-        #- include: production_rule
+    # token <Ident> <Reg>
+    def_token:
+        - match: '\b(token)\b'
+          captures:
+            1: keyword.control.token.lbnf
+          push:
+            - include: reg
+
+#
+#    reg_1:
+#        - include: reg_1
+#          set:
+#            - match: '\|'
+#              set: reg_2
+#        - include: reg_2
+#          set:
+#            - match: '\-'
+#              set: reg_2
+#        - include: reg_2
+#
+#    reg_2:
+#        - include: reg_2
+#          set:
+#            - match: '\s+'
+#              set: reg_3
+#
+#    reg_3:
+#        - match: 'char'
+#          scope: entity.name.char.lbnf
+#        - match: 'lower'
+#          scope: entity.name.lower.lbnf
+#        - match: 'upper'
+#          scope: entity.name.upper.lbnf
+#        - match: 'letter'
+#          scope: entity.name.letter.lbnf
+#        - match: 'digit'
+#          scope: entity.name.digit.lbnf
+#        - match: 'eps'
+#          scope: entity.name.eps.lbnf
+#        - match: '\('
+#          scope:  punctuation.section.group.begin
+#          set:
+#            - include: reg0
+#            - match: '\)'
+#              meta_scope: meta.group
+#              scope: punctuation.section.group.end
+#        - match: '\['
+#          scope:  punctuation.section.group.begin
+#          set:
+#            - include: terminal_string
+#            - match: '\]'
+#              meta_scope: meta.group
+#              scope: punctuation.section.group.end
+#        - match: '\{'
+#          scope:  punctuation.section.group.begin
+#          set:
+#            - include: terminal_string
+#            - match: '\}'
+#              meta_scope: meta.group
+#              scope: punctuation.section.group.end
+#        - include: reg3
+#          set:
+#            - match: '\+'
+#              scope: keyword.operator.regexplus.lbnf
+#        - include: reg3
+#          set:
+#            - match: '\*'
+#              scope: keyword.operator.regexstar.lbnf
+#        - include: reg3
+#          set:
+#            - match: '\?'
+#              scope: keyword.operator.regexlazy.lbnf
+#        - include: reg3
+#          set:
+#            - match: '\?'
+#              scope: keyword.operator.regexlazy.lbnf
+#        - include: terminal_char
 
     # comment <String>
     def_comment:
@@ -42,6 +120,7 @@ contexts:
               scope: punctuation.terminator.production.lbnf
               pop: true
 
+    # rules <Ident> ::= <ListRHS>
     def_rules:
         - match: '\b(rules)\b'
           captures:
@@ -50,33 +129,24 @@ contexts:
             - rules_list
             - production_op_replace
             - production_cat
-          #push: list_ident
 
+    # <ListRHS>
     rules_list:
-        - include: rules_prod_replace
-          set:
-            - match: '(\|)'
-              captures:
-                1: punctuation.separator
-              set: rules_list
-            - match: '\;'
-              scope: punctuation.terminator.production.lbnf
-              pop: true
-
-    # Production Rule
-    # Current: <ListItem>
-    rules_prod_replace:
-        - match: '\|'
-          scope: punctuation.separator.lbnf
+        - match: '\;'
+          scope: punctuation.terminator.production.lbnf
           pop: true
+        - match: '(\|)'
+          captures:
+            1: punctuation.separator.lbnf
+          set: rules_list
         - include: nt_builtin
-          set: rules_prod_replace
+          set: rules_list
         - include: terminal_string
-          set: rules_prod_replace
+          set: rules_list
         - include: production_cat0
-          push: rules_prod_replace
+          push: rules_list
         - include: list_cat
-          set: rules_prod_replace
+          set: rules_list
 
     # layout <ListString> | layout stop <ListString> | layout toplevel
     def_layout:
@@ -153,7 +223,7 @@ contexts:
         - include: production_cat0
 
     def_internal:
-        - match: '\b(internal)\b'
+        - match: '\b(internal)\b\s+'
           captures:
             1: keyword.control.internal.lbnf
           set:
@@ -162,7 +232,7 @@ contexts:
               scope: production.rule.lbnf
               captures:
                 1: entity.name.label.lbnf
-              push:
+              set:
                 - production_replace
                 - production_op_replace
                 - production_cat
@@ -271,6 +341,11 @@ contexts:
         - match: '\b(String)\b'
           scope: constant.language.string.lbnf
                  nonterminal.builtin.string.lbnf
+
+    # <Char>:
+    terminal_char:
+        - match: "\'[^\']\'"
+          scope: string.quoted.single.lbnf
 
     # <String>:
     terminal_string:
